@@ -5,13 +5,13 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL || 'your_email@example.com',
     secret: process.env.U_PASS || 'your_password',
-    targetGroupId: 18432094 , 
+    targetGroupId: 330865 , 
     minuteInterval: 302 * 1000,
     boxInterval: 1109 * 60 * 1000
 };
 
 const MY_INFO = {
-    keyword: "أوكسجينه",  
+    keyword: "،،",  
     ownerId: "2481425"  
 };
 
