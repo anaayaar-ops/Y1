@@ -6,67 +6,56 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
-    targetIds: [80055399, 0], 
-    targetRoomId: 9969,        
+    targetIds: [80055399, 0], // تأكد من رقم العضوية 0 هل هو صحيح؟
+    targetRoomId: 9969,
     allianceId: "5550005",
-    commandDelay: 3200        // التأخير بين الأوامر (1.5 ثانية)
+    commandDelay: 1500
 };
 
 const service = new WOLF();
-
-// دالة الانتظار
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 service.on('ready', () => {
-    console.log(`✅ المتصيد الذكي متصل: ${service.currentSubscriber.nickname}`);
+    console.log(`✅ البوت جاهز: ${service.currentSubscriber.nickname}`);
+    console.log(`📡 يراقب الخاص من: ${settings.targetIds.join(' , ')}`);
 });
 
 service.on('message', async (message) => {
-    // مراقبة الخاص من العضويات المحددة
-    if (!message.isGroup && settings.targetIds.includes(message.authorId)) {
+    // استخراج معرف المرسل بطريقتين لضمان التوافق مع إصدار المكتبة
+    const senderId = message.sourceSubscriberId || message.authorId;
+    
+    // فحص: هل الرسالة خاصة؟ (ليست من مجموعة) وهل المرسل ضمن القائمة؟
+    if (!message.isGroup && settings.targetIds.includes(senderId)) {
         
-        const content = (message.body || "").trim();
+        // استخراج نص الرسالة بطرق مختلفة لضمان القراءة
+        const content = (message.body || message.content || "").trim();
+        console.log(`📩 رسالة خاصة جديدة من [${senderId}]: ${content}`);
 
         // 1. حالة: !او موسم قطع
         if (content.includes("!او موسم قطع")) {
-            console.log(`✨ رصد "موسم قطع" - الانتظار قبل الإرسال...`);
             await sleep(settings.commandDelay);
             await service.messaging.sendGroupMessage(settings.targetRoomId, "!مد موسم قطع");
+            console.log(`✅ تم إرسال: !مد موسم قطع`);
             return;
         }
 
         // 2. حالة: !او مزاد
         const auctionMatch = content.match(/!او مزاد\s+(\d+)/);
-
         if (auctionMatch) {
             const auctionId = auctionMatch[1];
-            console.log(`💰 رصد مزاد [${auctionId}] - بدء تنفيذ الأوامر مع فواصل زمنية...`);
-
             try {
-                // تنفيذ الأمر الأول (السحب)
-                await service.messaging.sendGroupMessage(
-                    settings.targetRoomId, 
-                    `!مد تحالف سحب ${settings.allianceId}`
-                );
-
-                // الانتظار قبل إرسال الأمر الثاني
-                console.log(`⏳ انتظار ${settings.commandDelay}ms قبل المزايدة...`);
+                await service.messaging.sendGroupMessage(settings.targetRoomId, `!مد تحالف سحب ${settings.allianceId}`);
                 await sleep(settings.commandDelay);
-
-                // تنفيذ الأمر الثاني (المزايدة)
-                await service.messaging.sendGroupMessage(
-                    settings.targetRoomId, 
-                    `!مد مزايدة ${auctionId} ${settings.allianceId}`
-                );
-                
-                console.log(`🚀 تم الانتهاء من إرسال أوامر المزاد.`);
+                await service.messaging.sendGroupMessage(settings.targetRoomId, `!مد مزايدة ${auctionId} ${settings.allianceId}`);
+                console.log(`✅ تم تنفيذ أوامر المزاد رقم: ${auctionId}`);
             } catch (err) {
-                console.error(`❌ فشل في الإرسال: ${err.message}`);
+                console.error(`❌ خطأ أثناء الإرسال: ${err.message}`);
             }
         }
+    } else if (!message.isGroup) {
+        // سطر اختياري للتصحيح: يطبع أي رسالة خاصة تصل من شخص غير مستهدف
+        console.log(`ℹ️ رسالة خاصة من مستخدم غير مدرج [${senderId}]`);
     }
 });
-
-service.on('error', (err) => console.error(`⚠️ خطأ: ${err.message}`));
 
 service.login(settings.identity, settings.secret);
