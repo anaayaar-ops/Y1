@@ -6,10 +6,10 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
-    targetIds: [80055399, 0], // تأكد من رقم العضوية 0 هل هو صحيح؟
-    targetRoomId: 9969,
+    targetIds: [79797,34361485], // تأكد من رقم العضوية 0 هل هو صحيح؟
+    targetRoomId: 224,
     allianceId: "5550005",
-    commandDelay: 1500
+    commandDelay: 3000
 };
 
 const service = new WOLF();
